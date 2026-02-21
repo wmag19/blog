@@ -1,6 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
+##Flags:
+# preview: will preview draft blog posts locally
+# test: will show the site excluding draft posts
+# commit: will sync and commit the posts to git
+
 # Change to the script's directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
@@ -21,35 +26,7 @@ for cmd in git rsync python3 hugo; do
     fi
 done
 
-# Step 1: Check if Git is initialized, and initialize if necessary
-if [ ! -d ".git" ]; then
-    echo "Initializing Git repository..."
-    git init
-    git remote add origin $myrepo
-else
-    echo "Git repository already initialized."
-    if ! git remote | grep -q 'origin'; then
-        echo "Adding remote origin..."
-        git remote add origin $myrepo
-    fi
-fi
-
-# # Step 2: Sync posts from Obsidian to Hugo content folder using rsync
-# echo "Syncing posts from Obsidian..."
-
-# if [ ! -d "$sourcePath" ]; then
-#     echo "Source path does not exist: $sourcePath"
-#     exit 1
-# fi
-
-# if [ ! -d "$destinationPath" ]; then
-#     echo "Destination path does not exist: $destinationPath"
-#     exit 1
-# fi
-
-# rsync -av --delete --exclude "attachments/" "$sourcePath" "$destinationPath"
-
-# Step 3: Process Markdown files with Python script to handle image links
+# Step 3: Process Markdown files with Python script to handle image links. Copies markdown post files.
 echo "Processing image links in Markdown files..."
 if [ ! -f "images.py" ]; then
     echo "Python script images.py not found."
@@ -61,6 +38,16 @@ if ! python3 images.py; then
     exit 1
 fi
 
+if [ "$1" == "preview" ]; then 
+    hugo server --buildDrafts --disableFastRender --noHTTPCache
+    exit 0
+fi
+
+if [ "$1" == "test" ]; then 
+    hugo server --disableFastRender --noHTTPCache
+    exit 0
+fi
+
 # Step 4: Build the Hugo site
 echo "Building the Hugo site..."
 if ! hugo; then
@@ -68,47 +55,30 @@ if ! hugo; then
     exit 1
 fi
 
-# # Step 5: Add changes to Git
-# echo "Staging changes for Git..."
-# if git diff --quiet && git diff --cached --quiet; then
-#     echo "No changes to stage."
-# else
-#     git add .
-# fi
+if [ "$1" == "commit" ]; then 
+    # Step 5: Add changes to Git
+    echo "Staging changes for Git..."
+    if git diff --quiet && git diff --cached --quiet; then
+        echo "No changes to stage."
+    else
+        git add .
+    fi
 
-# # Step 6: Commit changes with a dynamic message
-# commit_message="New Blog Post on $(date +'%Y-%m-%d %H:%M:%S')"
-# if git diff --cached --quiet; then
-#     echo "No changes to commit."
-# else
-#     echo "Committing changes..."
-#     git commit -m "$commit_message"
-# fi
+    # Step 6: Commit changes with a dynamic message
+    commit_message="New Blog Post on $(date +'%Y-%m-%d %H:%M:%S')"
+    if git diff --cached --quiet; then
+        echo "No changes to commit."
+    else
+        echo "Committing changes..."
+        git commit -m "$commit_message"
+    fi
+    # Step 7: Push all changes to the main branch
+    echo "Deploying to GitHub Main..."
+    if ! git push origin main; then
+        echo "Failed to push to main branch."
+        exit 1
+    fi
 
-# # Step 7: Push all changes to the main branch
-# echo "Deploying to GitHub Main..."
-# if ! git push origin main; then
-#     echo "Failed to push to main branch."
-#     exit 1
-# fi
-
-# # Step 8: Push the public folder to the hostinger branch using subtree split and force push
-# echo "Deploying to GitHub Hostinger..."
-# if git branch --list | grep -q 'hostinger-deploy'; then
-#     git branch -D hostinger-deploy
-# fi
-
-# if ! git subtree split --prefix public -b hostinger-deploy; then
-#     echo "Subtree split failed."
-#     exit 1
-# fi
-
-# if ! git push origin hostinger-deploy:hostinger --force; then
-#     echo "Failed to push to hostinger branch."
-#     git branch -D hostinger-deploy
-#     exit 1
-# fi
-
-# git branch -D hostinger-deploy
+fi
 
 echo "All done! Site synced, processed, committed, built, and deployed."
