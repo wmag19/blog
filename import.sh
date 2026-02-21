@@ -28,12 +28,12 @@ done
 
 # Step 3: Process Markdown files with Python script to handle image links. Copies markdown post files.
 echo "Processing image links in Markdown files..."
-if [ ! -f "images.py" ]; then
-    echo "Python script images.py not found."
+if [ ! -f "sync.py" ]; then
+    echo "Python script sync.py not found."
     exit 1
 fi
 
-if ! python3 images.py; then
+if ! python3 sync.py; then
     echo "Failed to process image links."
     exit 1
 fi

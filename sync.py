@@ -39,7 +39,7 @@ for filename in os.listdir(post_dir):
     for image in images:
         image_basename = os.path.basename(image)
         safe_name = urllib.parse.quote(image_basename)
-        markdown_image = f"![Image Description](/images/{safe_name})"
+        markdown_image = f"[Image Description](/images/{safe_name})"
 
         # Replace possible forms: [[path/to/image.png]] or [[image.png]]
         content = re.sub(r'\[\[\s*' + re.escape(image) + r'\s*\]\]', markdown_image, content)
