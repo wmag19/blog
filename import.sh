@@ -39,11 +39,13 @@ if ! python3 sync.py; then
 fi
 
 if [ "$1" == "preview" ]; then 
+    rm -rf public/
     hugo server --buildDrafts --disableFastRender --noHTTPCache
     exit 0
 fi
 
 if [ "$1" == "test" ]; then 
+    rm -rf public/
     hugo server --disableFastRender --noHTTPCache
     exit 0
 fi
